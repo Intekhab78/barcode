@@ -12,6 +12,11 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
+// Health check endpoint - frontend isko ping karta hai local backend check ke liye
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', source: 'local' });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/items', itemRoutes);
 

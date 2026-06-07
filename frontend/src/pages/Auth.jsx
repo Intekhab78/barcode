@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { motion } from 'framer-motion';
-
-import { API_BASE_URL } from '../utils/config';
+import { api, getApiBaseUrl } from '../utils/config';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -12,7 +10,10 @@ const Auth = () => {
         e.preventDefault();
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
-            const res = await axios.post(`${API_BASE_URL}${endpoint}`, formData);
+            const resolvedUrl = await getApiBaseUrl(); // pehle URL resolve karo
+            const res = await api.post(endpoint, formData, {
+                baseURL: resolvedUrl
+            });
             localStorage.setItem('token', res.data.token);
             window.location.reload();
         } catch (err) {

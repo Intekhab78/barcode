@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Upload, LogOut, Printer } from 'lucide-react';
 import BarcodeLabel from '../components/BarcodeLabel';
 import { generatePDF } from '../utils/pdf';
-
-import { API_BASE_URL } from '../utils/config';
+import { api, getApiBaseUrl } from '../utils/config';
 
 const Dashboard = () => {
     const [items, setItems] = useState([]);
@@ -12,20 +10,29 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [baseUrl, setBaseUrl] = useState('http://localhost:5011');
 
     useEffect(() => {
-        fetchItems();
+        getApiBaseUrl().then(url => {
+            setBaseUrl(url);
+            fetchItems(url); // URL resolve hone ke baad hi fetch karo
+        });
     }, []);
 
-    const fetchItems = async () => {
+    const fetchItems = async (resolvedUrl) => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/items`, {
+            // URL pass karo ya api instance use karo (interceptor ensure karega)
+            const res = await api.get('/api/items', {
+                baseURL: resolvedUrl, // explicit URL taake interceptor pe depend na ho
                 headers: { 'x-auth-token': localStorage.getItem('token') }
             });
-            setItems(res.data);
-            console.log(`DEBUG: Items fetched at ${new Date().toLocaleTimeString()}:`, res.data);
+            // Safety check: ensure response is array
+            const data = Array.isArray(res.data) ? res.data : [];
+            setItems(data);
+            console.log(`DEBUG: Items fetched at ${new Date().toLocaleTimeString()}:`, data);
         } catch (err) {
-            console.error('Failed to fetch items');
+            console.error('Failed to fetch items', err);
+            setItems([]);
         } finally {
             setLoading(false);
         }
@@ -40,14 +47,15 @@ const Dashboard = () => {
         formData.append('csv', file);
 
         try {
-            const res = await axios.post(`${API_BASE_URL}/api/items/upload`, formData, {
+            const res = await api.post('/api/items/upload', formData, {
+                baseURL: baseUrl, // resolved URL use karo
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'x-auth-token': localStorage.getItem('token')
                 }
             });
             alert('Upload Successful! Refreshing your items...');
-            fetchItems();
+            fetchItems(baseUrl); // baseUrl pass karo
         } catch (err) {
             console.error('Upload Error Details:', err.response?.data || err);
 
@@ -168,7 +176,7 @@ const Dashboard = () => {
                                             <td style={{ padding: '1rem' }}>{item.size} / {item.color}</td>
                                             <td style={{ padding: '1rem' }}>{item.stock !== undefined ? item.stock : 'N/A'}</td>
                                             <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                                {item.barcodePath && <img src={`${API_BASE_URL}/${item.barcodePath}`} alt="barcode" style={{ height: '30px' }} />}
+                                                {item.barcodePath && <img src={`${baseUrl}/${item.barcodePath}`} alt="barcode" style={{ height: '30px' }} />}
                                             </td>
                                             <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                 <button
@@ -194,7 +202,7 @@ const Dashboard = () => {
                         {/* Hidden render for labels used by PDF generator */}
                         <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
                             {items.map(item => (
-                                <BarcodeLabel key={item._id} item={item} />
+                                <BarcodeLabel key={item._id} item={item} baseUrl={baseUrl} />
                             ))}
                         </div>
                     </>

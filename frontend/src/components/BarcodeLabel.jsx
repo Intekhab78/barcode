@@ -1,19 +1,18 @@
 import React from 'react';
-import { API_BASE_URL } from '../utils/config';
 
-const BarcodeLabel = ({ item }) => {
+const BarcodeLabel = ({ item, baseUrl = 'http://localhost:5011' }) => {
     if (!item) return null;
 
     const hasOffer = item.offerPrice && item.offerPrice > 0;
-    const isComboOrPack = (item.description || '').toLowerCase().includes('pack') || 
-                         (item.description || '').toLowerCase().includes('set');
+    const isComboOrPack = (item.description || '').toLowerCase().includes('pack') ||
+        (item.description || '').toLowerCase().includes('set');
 
     return (
-        <div 
+        <div
             id={`label-${item._id}`}
-            style={{ 
-                width: '50mm', 
-                height: '25mm', 
+            style={{
+                width: '50mm',
+                height: '25mm',
                 background: 'white',
                 color: 'black',
                 display: 'flex',
@@ -32,7 +31,7 @@ const BarcodeLabel = ({ item }) => {
             <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {item.barcodePath && (
                     <img
-                        src={`${API_BASE_URL}/${item.barcodePath}`}
+                        src={`${baseUrl}/${item.barcodePath}`}
                         alt="barcode"
                         style={{ width: '100%', height: 'auto', maxHeight: '12mm' }}
                     />
